@@ -1,12 +1,16 @@
-require('module-alias/register');
-const request = require("supertest");
+jest.mock('../middlewares/auth', () => ({
+  authMiddleware: (req, res, next) => next(),
+  isAdmin: (req, res, next) => next(),
+}));
+const request =require("supertest");
 const { app } = require("../server");
 const jwt = require("jsonwebtoken");
 const config = require("../config");
 const mongoose = require("mongoose");
 const mockingoose = require("mockingoose");
-const User = require("@api/users/users.model");
-const usersService = require("@api/users/users.service");
+const User = require("../api/users/users.model");
+const usersService = require("../api/users/users.service");
+
 
 describe("tester API users", () => {
   let token;
@@ -27,7 +31,6 @@ describe("tester API users", () => {
 
   beforeEach(() => {
     token = jwt.sign({ userId: USER_ID }, config.secretJwtToken);
-    // mongoose.Query.prototype.find = jest.fn().mockResolvedValue(MOCK_DATA);
     mockingoose(User).toReturn(MOCK_DATA, "find");
     mockingoose(User).toReturn(MOCK_DATA_CREATED, "save");
   });
@@ -36,8 +39,11 @@ describe("tester API users", () => {
     const res = await request(app)
       .get("/api/users")
       .set("x-access-token", token);
+      console.log('Status:', res.status);
+      console.log('Body:', res.body);
     expect(res.status).toBe(200);
     expect(res.body.length).toBeGreaterThan(0);
+
   });
 
   test("[Users] Create User", async () => {

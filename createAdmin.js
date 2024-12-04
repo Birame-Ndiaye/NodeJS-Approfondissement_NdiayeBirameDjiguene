@@ -1,11 +1,9 @@
-// createAdminUser.js
-
 const mongoose = require('mongoose');
-const User = require('./api/users/users.model'); // Ajustez le chemin si nécessaire
+const User = require('./api/users/users.model');
 
 async function createAdminUser() {
   try {
-    await mongoose.connect('mongodb://localhost:27017/articles_db', {
+    await mongoose.connect('mongodb://localhost:27017/myapp', {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
@@ -17,11 +15,10 @@ async function createAdminUser() {
       return;
     }
 
-    // Ne hachez pas le mot de passe ici
     const user = new User({
       name: 'Admin',
       email: 'admin@example.com',
-      password: 'passer123', // Mot de passe en clair
+      password: 'passer123',
       role: 'admin',
     });
 

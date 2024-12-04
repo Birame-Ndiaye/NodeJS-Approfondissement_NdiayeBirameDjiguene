@@ -1,19 +1,17 @@
-require('module-alias/register');
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const mongoose = require('mongoose');
 const cors = require("cors");
 const NotFoundError = require("./errors/not-found");
+const usersRouter = require("./api/users/users.router");
+const usersController = require("./api/users/users.controller");
+const articlesRouter = require("./api/articles/articles.router");
 
-const usersRouter = require("@api/users/users.router");
-const usersController = require("@api/users/users.controller");
-const articlesRouter = require("@api/articles/articles.router");
+const articleController = require("./api/articles/articles.controller");
+const { authMiddleware, isAdmin } = require("./middlewares/auth");
 
-const articleController = require("@api/articles/articles.controller");
+const app = express(); 
 
-
-const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -34,13 +32,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "x-access-token"],
 }));
 
-// Connexion à MongoDB
-mongoose.connect('mongodb://localhost:27017/articles_db', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
-  console.log('Connecté à la base de données');
-}).catch(err => console.error('Erreur de connexion à MongoDB :', err));
 
 // Middleware pour les websockets
 io.on("connection", (socket) => {
@@ -60,7 +51,6 @@ app.use((req, res, next) => {
 
 app.post('/login', usersController.login);
 app.post('/api/users', usersController.create);
-!
 app.use("/api/users", usersRouter);
 app.use('/api/articles', articlesRouter);
 
@@ -79,9 +69,7 @@ app.use((error, req, res, next) => {
   res.json({ status, message });
 });
 
-// Démarrage du serveur
-const PORT = 3000;
-
-server.listen(PORT, () => {
-  console.log(`Serveur démarré sur http://localhost:${PORT}`);
-});
+module.exports = {
+  app,
+  server,
+};

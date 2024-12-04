@@ -1,4 +1,5 @@
  const Article = require('../articles/articles.schema');
+ const mongoose = require('mongoose');
 
 // Méthode pour créer un article
 async function createArticle(data) {
@@ -7,7 +8,7 @@ async function createArticle(data) {
       title: data.title,
       content: data.content,
       user: data.user,
-      status: data.status || 'draft', // Par défaut à 'draft' si non spécifié
+      status: data.status || 'draft', 
     });
     const savedArticle = await newArticle.save();
     return savedArticle;
@@ -15,40 +16,21 @@ async function createArticle(data) {
     throw new Error(`Erreur lors de la création de l'article: ${error.message}`);
   }
 }
+
+async function updateArticle(id, data) {
+  const updatedArticle = await Article.findByIdAndUpdate(id, data, { new: true });
+  return updatedArticle;
+}
+
+
 async function getArticlesByUser(userId) {
-  try {
-    const articles = await Article.find({ author: userId })
-      .populate('user', '-password -__v') // Exclure le mot de passe et __v
-      .exec();
-    return articles;
-  } catch (err) {
-    throw err;
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('ID utilisateur invalide');
   }
+  return await Article.find({ user: userId }).populate('user');
 }
 
-// Méthode pour mettre à jour un article
-async function updateArticle(articleId, data) {
-  try {
-    const updatedArticle = await Article.findByIdAndUpdate(
-      articleId,
-      {
-        title: data.title,
-        content: data.content,
-        user: data.user,
-        status: data.status,
-      },
-      { new: true, runValidators: true } // Options pour retourner le document mis à jour et appliquer les validateurs
-    );
 
-    if (!updatedArticle) {
-      throw new Error('Article non trouvé');
-    }
-
-    return updatedArticle;
-  } catch (error) {
-    throw new Error(`Erreur lors de la mise à jour de l'article: ${error.message}`);
-  }
-}
 
 // Méthode pour supprimer un article
 async function deleteArticle(articleId) {

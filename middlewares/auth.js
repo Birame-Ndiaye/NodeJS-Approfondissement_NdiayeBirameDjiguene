@@ -2,9 +2,8 @@ const jwt = require("jsonwebtoken");
 const config = require("../config");
 const User = require("../api/users/users.model");
 
-module.exports = async (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
-    // const token = req.headers["x-access-token"];
     const token = req.headers['x-access-token'] || req.headers['authorization'];
     if (!token) {
       return res.status(401).json({ message: "Aucun token fourni. Veuillez vous authentifier." });
@@ -16,7 +15,7 @@ module.exports = async (req, res, next) => {
       return res.status(404).json({ message: "Utilisateur non trouvé. Veuillez vous authentifier." });
     }
 
-    req.user = user;//attacher toutes les informations de l utilisateur 
+    req.user = user; 
     next();
   } catch (error) {
     return res.status(401).json({ message: "Token invalide ou expiré. Veuillez vous reconnecter." });
@@ -24,9 +23,15 @@ module.exports = async (req, res, next) => {
 };
 
 // Middleware pour vérifier si l'utilisateur est admin
-module.exports.isAdmin = (req, res, next) => {
+const isAdmin = (req, res, next) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Accès refusé. Réservé aux administrateurs." });
-  }
-  next();
+  }
+  next();
+};
+
+// Exporter les middlewares sous forme d'objet
+module.exports = {
+  authMiddleware,
+  isAdmin,
 };

@@ -117,7 +117,7 @@ export default {
   }
 },
 
-    async load() {
+   async load() {
   try {
     this.userToken = localStorage.getItem('token');
     console.log('Token utilisateur :', this.userToken);
@@ -139,6 +139,8 @@ export default {
       this.socket.on('user:delete', (data) => {
         this.users = this.users.filter(user => user._id != data.id);
       });
+    } else {
+      this.layout = 'login';
     }
   } catch (error) {
     console.error('Erreur lors du chargement des utilisateurs :', error);
@@ -162,7 +164,7 @@ export default {
   }
 },
 
-   async create() {
+  async create() {
   try {
     const response = await axios.post('http://localhost:3000/api/users', this.newUser, {
       headers: {
@@ -170,8 +172,8 @@ export default {
       }
     });
     console.log("Utilisateur créé avec succès:", response.data);
-    // Ajouter l'utilisateur à la liste localement
-    this.users.push(response.data);
+    // Ne pas ajouter l'utilisateur ici, le gestionnaire Socket.IO s'en chargera
+    // this.users.push(response.data);
     // Réinitialiser le formulaire
     this.newUser = {
       name: '',
@@ -183,6 +185,7 @@ export default {
     alert('Impossible de créer un utilisateur. Veuillez vérifier les informations saisies.');
   }
 },
+
   }
 }
 

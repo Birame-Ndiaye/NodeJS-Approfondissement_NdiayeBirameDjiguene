@@ -1,44 +1,16 @@
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const config = require("../../config");
 const articleService = require('./articles.services.js'); // Importation des services d'articles
+const User = require('./articles.schema'); // Vérifiez le chemin
 
 
-// async function createArticle(req, res) {
-//   try {
-//     // Vérifier que req.user est défini
-//     if (!req.user || !req.user.id) {
-//       console.log('Utilisateur non authentifié');
-//       console.log('Contenu de req.body :', req.body); // Affiche le contenu de req.body
-//       return res.status(400).json({ message: "L'ID de l'utilisateur est requis." });
-//     }
-
-//     console.log("Utilisateur authentifié :", req.user);
-//     console.log("Données de l'article :", req.body);
-
-//     const articleData = {
-//       ...req.body,
-//       user: req.user.id, // Utiliser req.user.id au lieu de req.body.userId
-//     };
-
-//     const newArticle = await articleService.createArticle(articleData);
-//     res.status(201).json(newArticle);
-
-//     // Émettre un événement via Socket.IO pour signaler la création de l'article
-//     if (req.io) {
-//       req.io.emit('articleCreated', newArticle);
-//     }
-//   } catch (error) {
-//     console.error("Erreur lors de la création de l'article :", error.message);
-//     res.status(500).json({ message: `Erreur lors de la création de l'article : ${error.message}` });
-//   }
-// }
-
-// Méthode pour mettre à jour un article existant
-
+// fonction pour creer un article 
 async function createArticle(req, res) {
   try {
-    // Vérifier que req.user est défini
-    if (!req.user || !req.user.id) {
+    if (!req.user || !req.user._id) {
       console.log('Utilisateur non authentifié');
-      console.log('Contenu de req.body :', req.body); // Affiche le contenu de req.body
+      console.log('Contenu de req.body :', req.body);
       return res.status(400).json({ message: "L'ID de l'utilisateur est requis." });
     }
 
@@ -47,13 +19,12 @@ async function createArticle(req, res) {
 
     const articleData = {
       ...req.body,
-      user: req.user.id, // Utiliser req.user.id au lieu de req.body.userId
+      user: req.user._id,
     };
 
     const newArticle = await articleService.createArticle(articleData);
     res.status(201).json(newArticle);
 
-    // Émettre un événement via Socket.IO pour signaler la création de l'article
     if (req.io) {
       req.io.emit('articleCreated', newArticle);
     }
@@ -62,6 +33,9 @@ async function createArticle(req, res) {
     res.status(500).json({ message: `Erreur lors de la création de l'article : ${error.message}` });
   }
 }
+
+// Fontion pour mise à jour
+
 async function updateArticle(req, res) {
   try {
     // Vérification du rôle de l'utilisateur
@@ -69,26 +43,41 @@ async function updateArticle(req, res) {
       return res.status(403).json({ message: "Accès refusé : vous devez être un administrateur pour modifier cet article." });
     }
 
-    const articleId = req.params.id; // Récupérer l'ID de l'article à partir des paramètres de la requête
-    const updatedData = req.body; // Récupérer les nouvelles données à partir du corps de la requête
+    console.log('req.params:', req.params);
+    console.log('Type de req.params.id :', typeof req.params.id);
+
+    const articleId = req.params.id;
+    if (!articleId) {
+      return res.status(400).json({ message: "ID de l'article non fourni." });
+    }
+
+    const updatedData = { ...req.body };
+    // Supprimer le champ 'user' si présent
+    delete updatedData.user;
+
+    console.log('Données reçues pour la mise à jour :', updatedData);
+
     const updatedArticle = await articleService.updateArticle(articleId, updatedData);
 
     if (!updatedArticle) {
       return res.status(404).json({ message: "Article non trouvé" });
     }
 
-    res.
-  
-status(200).json(updatedArticle);
+    res.status(200).json(updatedArticle);
 
     // Émettre un événement via Socket.IO pour signaler la mise à jour de l'article
     if (req.io) {
       req.io.emit('articleUpdated', updatedArticle);
     }
   } catch (error) {
-    res.status(500).json({ message: `Erreur lors de la mise à jour de l'article : ${error.message}` });
+    if (error.name === 'ValidationError' || error.name === 'CastError') {
+      res.status(400).json({ message: `Données invalides : ${error.message}` });
+    } else {
+      res.status(500).json({ message: `Erreur lors de la mise à jour de l'article : ${error.message}` });
+    }
   }
 }
+
 
 // Méthode pour supprimer un article
 async function deleteArticle(req, res) {
